@@ -1,0 +1,952 @@
+---
+title: "Análisis del Dataset *Parkinson Replicated Acoustic Features*"
+author: "Elena Barro León, Raúl Bonillo Pulido y Paula Merino Purificacion"
+date: "`r Sys.Date()`"
+output: 
+ html_document:
+    toc: true
+    toc_float: true #Hace que el índice sea flotante
+    theme: journal
+bibliography: [Naranjo2017.bib, Naranjo2016.bib, libraries.bib]
+link_citations: true
+---
+<!-- Antes de comenzar !!!
+debes crear el archivo con las referencias de R y los paquetes que vayas a utilizar. Puedes actualizar
+el archivo en cualquier momento, sólo copia en la terminal el siguiente código y añade el nuevo
+paquete a la lista, se creará un nuevo archivo con las referencias en el formato adecuado "BibTeX".
+De forma automática incluye la referencia de R-->
+
+<!-- Para poder cambiar el diseño de mi archivo HTLM utilizo lenguaje CSS que  controla la apariencia del contenido: colores, tipografía, márgenes, bordes, alineación, entre otros aspectos. -->
+
+<div  style="display: flex; align-items: center;  gap: 20px;"> 
+  <img src="Logo_UCO.png" width="10%"> 
+  <img src="Logo_FacCiencias.png" width="10%">
+</div> 
+
+<!-- knitr::write_bib(c(.packages(), 'dplyr', 'ggplot2', 'knitr', readxl'), 'libraries.bib') -->
+```{r Opciones_Globales_chunk, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Introducción
+
+### 1.1 El Parkinson
+
+La **Enfermedad de Parkinson (EP)** es el segundo trastorno neurodegenerativo más común, afectando significativamente a la población mayor de 65 años en Europa. [^1]
+
+Ante la necesidad de métodos diagnósticos complementarios, las grabaciones de voz se han postulado como un biomarcador potencial no invasivo y de bajo coste. Esto se debe a que la EP provoca disfonía, que se caracteriza por inestabilidad del tono y el volumen.[^2]
+
+[^1]: Naranjo, L., Perez, C. J., Campos-Roca, Y., & Martin, J. (2016). Addressing voice recording replications for Parkinson’s disease detection. Expert Systems with Applications, 46, 286-292.
+
+[^2]: Naranjo, L., Perez, C. J., Martin, J., & Campos-Roca, Y. (2017). A two-stage variable selection and classification approach for Parkinson’s disease detection by using voice recording replications. Computer methods and programs in biomedicine, 142, 147-156.
+
+### 1.2 Los datos
+
+<!-- cargamos las librerias que vamos a utilizar. Como queremos que el código se ejecute, pero no que aparezca en el documento final, excluímos los avisos y mensajes echo=FALSE (Elimina el código, solo sale el resultado), warning=FALSE (No aparece el error ni el mensaje de error), message=FALSE (Se ejecuta el código pero no aparece el mensaje) --> 
+
+```{r cargar librerias, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr) # Para la manipulación de datos, mutate(), select(), etc.
+library(ggplot2) # Para la visualización de datos, geom_point(), geom_histogram(). etc.
+library(readr) #Para leer los datos.
+library(DT) #Permite crear tablas interactivas, como nuestro dataset es muy grande este tipo de formato es mucho más cómodo
+library(kableExtra) #Nos serviráa a la hora de poder customizar las tablas, mejorando su diseño y presentación
+library(effsize) # Para poder calcular el Cliff's Delta que nos servirá para ver el tamaño del efecto estimado al realziar la prueba de Mann-Whittney
+```
+
+<!-- Leemos los datos que vamos a utilizar. Como queremos que el código se ejecute, pero no que aparezca en el documento final, excluímos los avisos y mensajes echo=FALSE (Elimina el código, solo sale el resultado), warning=FALSE (No aparece el error ni el mensaje de error), message=FALSE (Se ejecuta el código pero no aparece el mensaje) --> 
+
+```{r leer datos, echo=FALSE, message=FALSE, warning=FALSE}
+datos_Parkinson <- read_delim("C:/Users/t1bal/ELENA/UNIVERSIDAD/4 curso/Computación/Proyevto R/Computación/Proyecto FINAL/archive/ReplicatedAcousticFeatures-ParkinsonDatabase2019.csv", delim = ";", escape_double = FALSE, col_types = cols(HNR05 = col_number(), 
+                                                                              HNR15 = col_number(), HNR25 = col_number(), 
+                                                                              HNR35 = col_number(), HNR38 = col_number(), 
+                                                                              MFCC0 = col_number(), MFCC1 = col_number(), 
+                                                                              MFCC2 = col_number(), MFCC3 = col_number(), 
+                                                                              MFCC4 = col_number(), MFCC5 = col_number(), 
+                                                                              MFCC6 = col_number(), MFCC7 = col_number(), 
+                                                                              MFCC8 = col_number(), MFCC9 = col_number(), 
+                                                                              MFCC10 = col_number(), MFCC11 = col_number(), 
+                                                                              MFCC12 = col_number(), Delta0 = col_number(), 
+                                                                              Delta1 = col_number(), Delta2 = col_number(), 
+                                                                              Delta3 = col_number(), Delta4 = col_number(), 
+                                                                              Delta5 = col_number(), Delta6 = col_number(), 
+                                                                              Delta7 = col_number(), Delta8 = col_number(), 
+                                                                              Delta9 = col_number(), Delta10 = col_number(), 
+                                                                              Delta11 = col_number(), Delta12 = col_number(),
+                                                                              Jitter_rel = col_number()), 
+                         locale = locale(grouping_mark = ""), 
+                         trim_ws = TRUE)
+
+```
+
+
+<!-- Se comprueba la existencia de datos perdidos en el conjunto de datos. Como queremos que el código se ejecute, pero no que aparezca en el documento final, excluímos los avisos y mensajes:  echo=FALSE (Elimina el código, solo sale el resultado), warning=FALSE (No aparece el error ni el mensaje de error), message=FALSE (Se ejecuta el código pero no aparece el mensaje)  El resultado indica que no hay valores perdidos, por lo que se utilizan todas las observaciones disponibles en el análisis. -->
+
+```{r datos perdidos, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+datos_Parkinson %>% 
+  is.na() %>% 
+  sum()
+
+```
+
+
+```{r  Primera vista datos, echo=FALSE, message=FALSE, warning=FALSE}
+datatable( #Genera una tabla interactiva en HTLM
+  head(datos_Parkinson, 8), #Seleccionamos las 8 primero filas del dataset
+  caption = 'Tabla 1: Ocho primeras filas (todas las columnas)', #Agregamos un título 
+  options = list( #Ajustes para la visualización de la tabla
+    scrollX = TRUE, #Permite que nos podamos desplazar de forma horizontal en la tabla
+    pageLength = 8)) #Indicamos el número de filas que pueden ser visibles por página
+
+```
+
+
+El conjunto de datos contiene `r nrow(datos_Parkinson)` filas y `r ncol(datos_Parkinson)` columnas. Sin embargo, estas `r nrow(datos_Parkinson)` filas no son datos independientes sino que 3 réplicas de 80 individuos. 
+
+
+### 1.3 Hipótesis
+
+**1. Jitter_rel**
+
+El **jitter relativo** es el indicador primario de la inestabilidad del tono de la voz. Mide el desorden o la irregularidad ciclo a ciclo en la duración de las vibraciones de las cuerdas vocales. Un Jitter Relativo alto se interpreta como una alteración en el mecanismo de la fonación.
+
+- *H0*: No existen diferencias significativas en la distribución jitter_rel entre el grupo control (sanos) y grupo Parkinson. 
+- *H1*: Existen diferencias en la distribución del jitter_rel entre el grupo control (sanos) y grupo Parkinson.
+
+**2. Jitter_abs**
+
+El **Jitter Absoluto** mide la misma irregularidad en la vibración de las cuerdas vocales, pero la expresa en unidades de tiempo (milisegundos o microsegundos). Mide la diferencia media de tiempo entre la duración de un ciclo de vibración vocal y el siguiente.
+
+- *H0*: No existen diferencias significativas en la distribución del Jitter Absoluto (Jitter_abs) entre el grupo Control (sanos) y el grupo Parkinson.
+- *H1*: Existe una diferencia significativa en la distribución del Jitter Absoluto (Jitter_abs) entre el grupo Control (sanos) y el grupo Parkinson.
+
+**3. Jitter_RAP**
+
+El **Jitter RAP** (perturbación media relativa ) es una medida avanzada de la inestabilidad vocal que busca ser más precisa y confiable que el Jitter Relativo o Absoluto.
+
+La clave de su fiabilidad es el 'suavizado': el RAP no mira cada ciclo vocal por separado, sino que calcula la variación promedio del tono basándose en tres ciclos consecutivos de la voz, permitiendo filtrar el ruido y los pequeños errores de medición aleatorios.
+
+- *H0*: No existen diferencias significativas en la distribución del Jitter RAP entre el grupo Control (Sanos) y el grupo Parkinson.
+- *H1*: Existe una diferencia significativa en la distribución del Jitter RAP entre el grupo Control y el grupo Parkinson.
+
+**4. Jitter_PPQ**
+
+El **Jitter PPQ** mide la variación promedio del período vocal, suavizada sobre cinco ciclos consecutivos. Este promediado extenso es crucial, porque filtra y minimiza el impacto del ruido y los errores accidentales de la grabación, lo que resulta en un indicador de inestabilidad mucho más estable y preciso.
+
+- *H0*: No existen diferencias significativas en la distribución del Jitter PPQ entre el grupo Control (Sanos) y el grupo Parkinson.
+- *H1*: Existe una diferencia significativa en la distribución del Jitter PPQ entre el grupo Control y el grupo Parkinson.
+
+**5. Shimmer dB**
+
+**Shim_dB** mide la perturbación de la amplitud de la voz en decibelios, reflejando variaciones absolutas de la intensidad vocal entre ciclos consecutivos.
+
+- **H0**: La perturbación de la amplitud medida por Shim_dB es similar entre individuos sanos y pacientes con Parkinson, indicando que la regularidad de la voz no se ve afectada por la enfermedad.
+
+- **H1**: La perturbación de la amplitud medida por Shim_dB difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos.
+
+**6. Shimmer loc**
+
+**Shim_loc** mide la perturbación local de la amplitud, evaluando las variaciones de amplitud entre ciclos consecutivos de manera muy sensible a cambios puntuales.
+
+- **H0**: No hay diferencias significativas en Shim_loc entre individuos sanos y pacientes con Parkinson
+
+- **H1**: Existen diferencias significativas en Shim_loc entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad en la voz de los pacientes.
+
+**7. Shimmer APQ3**
+
+**Shim_APQ3** calcula el cociente de perturbación de amplitud promedio sobre tres ciclos consecutivos, proporcionando una medida más estable que Shim_loc y menos sensible a fluctuaciones aisladas.
+
+- **H0**: No hay diferencias significativas en Shim_APQ3 entre individuos sanos y pacientes con Parkinson.
+
+- **H1**: Existen diferencias en Shim_APQ3 entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en los pacientes.
+
+**8. Shimmer APQ5**
+
+**Shim_APQ5** es el cociente de perturbación de amplitud promedio sobre cinco ciclos consecutivos, proporcionando una medida de la variabilidad de la amplitud más estable y menos sensible a fluctuaciones extremas.
+
+- **H0**: La perturbación de la amplitud medida por Shim_APQ5 es similar entre individuos sanos y pacientes con Parkinson, indicando que la regularidad de la voz no se ve afectada por la enfermedad.
+
+- **H1**: La perturbación de la amplitud medida por Shim_APQ5 difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos.
+
+**9. Shimmer APQ11**
+
+**Shim_APQ11** calcula la perturbación promedio sobre once ciclos consecutivos, proporcionando la medida más estable y global de la irregularidad de la amplitud vocal.
+
+- **H0**: No hay diferencias significativas en Shim_APQ11 entre individuos sanos y pacientes con Parkinson.
+
+- **H1**: Existen diferencias significativas en Shim_APQ11 entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en los pacientes.
+
+**10. Análisis Univariante de las variables no lineales**
+
+La voz humana presenta una **dinámica inherentemente no lineal**, resultado de la interacción compleja entre el control neuromotor y la vibración laríngea. En este contexto, *PPE* cuantifica la imprevisibilidad de la señal vocal, *RPDE* evalúa el grado de regularidad del periodo de vibración, y *DFA* describe la organización temporal de las fluctuaciones a largo plazo. Estas métricas permiten caracterizar **alteraciones dinámicas sutiles** que no se reflejan en **medidas lineales tradicionales**, siendo especialmente relevantes para el estudio de la voz en la enfermedad de Parkinson.
+
+- *H0:* Las medidas no lineales de complejidad vocal no presentan diferencias significativas entre los grupos control y PD.
+
+- *H1:* Las medidas no lineales de complejidad vocal son mayores en sujetos con Parkinson con respecto a los sujetos control.
+
+**11. Análisis de la variabilidad intra-sujeto**
+
+Dado que las variables no lineales describen propiedades dinámicas de la señal vocal que pueden manifestarse de forma intermitente y no uniforme, la ausencia de diferencias en los promedios sugiere que las alteraciones podrían expresarse principalmente a través de la dinámica temporal interna y no como un cambio sistemático del valor medio. En este contexto, resulta especialmente relevante el análisis de la variabilidad intra-sujeto, ya que permite explorar posibles diferencias en la estabilidad y organización dinámica de la voz que quedan ocultas al resumir la señal mediante un único valor promedio.
+
+- *H0:* Los sujetos con Parkinson no presentan variabilidad intra-sujeto significativa en las métricas vocales con respecto a los controles sanos.
+
+- *H1:* Los sujetos con Parkinson presentan una mayor variabilidad intra-sujeto en las métricas vocales que los controles sanos.
+
+## Materiales
+
+El presente estudio en el conjunto de datos recopilados por [kaggle](https://www.kaggle.com/datasets/hugosouza/parkinson-replicated-acoustic-features-dataset/data). 
+
+Durante la revisión del conjunto de datos se detectaron inconsistencias en el formato numérico de algunas variables, ya que el carácter punto (.) se utilizaba tanto como separador decimal como separador de miles. En varios casos se observaron valores con múltiples puntos y sin un criterio uniforme claramente documentado en el artículo original. Ante esta situación, se adoptó un criterio homogéneo para el preprocesamiento de los datos, tomando como referencia el primer punto en aquellos valores donde actuaba como separador de miles, con el objetivo de garantizar una representación numérica coherente para el análisis estadístico posterior.
+
+Hemos usado R [@readr] para leer los datos. Hemos usado dplyr [@R-dplyr], ggplot2 [@R-ggplot2], R studio [@R-base] para trabajar con los datos, effsize [@effsize], DT [@DT] para crear tablas interactivas y kableExtra [@kableExtra] para personalizar las tablas. 
+
+
+## Métodos
+
+### 3.1 Procesamiento de los datos
+
+Dado que cada individuo contaba con tres réplicas de características extraídas de grabaciones de voz pertenecientes al mismo sujeto, estas no pueden considerarse observaciones independientes. Por ello, los datos fueron agrupados por individuo **ID**, **género** y **estado clínico**. Para cada sujeto se calculó la **media de las réplicas**, que fue utilizada como unidad de análisis en los estudios posteriores.
+
+Las imperfecciones tecnológicas y la variabilidad biológica generan réplicas que no son idénticas, lo que puede dar lugar a valores atípicos (outliers). Estos se aceptan en el análisis, ya que reflejan la variabilidad real de la señal vocal.
+
+### 3.2 Análisis Jitter_rel
+
+
+```{r Agrupación_datosREL, echo=FALSE, message=FALSE, warning=FALSE}
+
+datos_REL <- datos_Parkinson %>% 
+  group_by(ID, Gender, Status) %>% #agrupamos las variables según el ID, Género y Satatus
+  summarise( #calcula resúmenes por grupo
+    media = mean(Jitter_rel), #Calculamos la media, mediana y desviación típica 
+            desvest = sd(Jitter_rel),
+            mediana = median(Jitter_rel)) %>%
+  ungroup() #Elimina el agrupamiento, esto lo usamos para evitar que nos de errores en el wilcox.test ya que esta funcion no entiende grupos
+
+```
+
+
+```{r Prueba de Shapiro-Wilk, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 1. Distribución de la Media de Jitter Relativo por Estado Clínico", fig.align='center'}
+#Realizamos una prueba de normalidad. 
+shapiro.test(datos_REL$media[datos_REL$Status == "0"])
+shapiro.test(datos_REL$media[datos_REL$Status== "1"])
+
+#Visualizamos la distribución de los datos con geom_density que sirve para crear una curva de densidad (una versión suavizada del histograma). 
+
+datos_REL %>%
+  ggplot(aes(x = media, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución de la Media de Jitter Relativo por Estado Clínico") +  #Título del gráfico
+  labs(x = "Media del Jitter Relativo (Jitter_rel)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)")
+
+```
+
+Se evaluó la distribución de la media del jitter relativo en los grupos control y Parkinson mediante la **Prueba de Shapiro-Wilk**, observándose desviaciones significativas de la normalidad en ambos grupos p value<0,05.
+
+Con el objetivo de aproximar la normalidad, se aplicó una transformación logarítmica log(1 + x). No obstante, tras la transformación, la variable continuó sin cumplir plenamente el supuesto de normalidad, p-value < 0.05.
+
+```{r Transformación Jitter_REL, echo=FALSE, message=FALSE, warning=FALSE}
+#La variable jitter_rel presentaba asimetría y valores extremos (ouliers), por lo que se aplicó una transformación logarítmica para aproximar la normalidad antes de realizar el análisis estaístico.
+datos_REL <- datos_REL %>% 
+  mutate( #Mutate: para crear/modificar una columna
+    log_JitterREL = log1p(media)) #long1p: Para transformarlos en log y en este caso esta función evita que haya ceros (Si algunos valores de Jitter_rel son muy grandes, al aplicar log1p() se “comprime” la escala.)
+```
+
+
+```{r Comprobar distribución con datos transformados, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 2. Distribución de Jitter Relativo transformado por Estado Clínico", fig.align='center'}
+#Realizamos una prueba de normalidad. Con el objetivo de determinar para comprobar si la transformación fue efectiva y la nueva variable (log_Jitter) procede de una población que sigue una distribución normal.
+shapiro.test(datos_REL$log_JitterREL[datos_REL$Status == "0"])
+shapiro.test(datos_REL$log_JitterREL[datos_REL$Status== "1"])
+
+
+#Visualizamos la distribución de los datos transformados y confirmar las pruebas de normalidad de Shapiro-Wilk.
+datos_REL %>%
+  ggplot(aes(x = log_JitterREL, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución del Jitter Relativo transformado por Estado Clínico")+  #Título del gráfico
+labs(x = "Logaritmo Jitter Relativo (Log_JitterREL)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)") 
+```
+
+### 3.3 Análisis Jitter_abs
+
+
+```{r Agrupación datos jitter abs, echo=FALSE, message=FALSE, warning=FALSE}
+datos_ABS <- datos_Parkinson %>% 
+  group_by(ID, Gender, Status) %>%  #agrupamos las variables según el ID, Género y Satatus
+  summarise( #calcula resúmenes por grupo
+    media = mean(Jitter_abs), #Calculamos la media, mediana y desviación típica 
+            desvest = sd(Jitter_abs),
+            mediana = median(Jitter_abs)) %>%
+  ungroup() #Elimina el agrupamiento, esto lo usamos para evitar que nos de errores en el wilcox.test ya que esta funcion no entiende grupos
+```
+
+La media del jitter absoluto fue analizada inicialmente mediante la prueba de **Shapiro–Wilk**, confirmándose la ausencia de normalidad en ambos grupos, p-value < 0.05. 
+
+```{r Prueba de Shapiro-Wilk jitter_abs, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 3. Distribución de la Media de Jitter abs por Estado Clínico", fig.align='center'}
+
+#Realizamos una prueba de normalidad. 
+shapiro.test(datos_ABS$media[datos_ABS$Status == "0"])
+shapiro.test(datos_ABS$media[datos_ABS$Status== "1"])
+
+
+#Visualizamos la distribución de la media jitter_abs y confirmar las pruebas de normalidad de Shapiro-Wilk.
+
+datos_ABS %>%
+  ggplot(aes(x = media, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución del Jitter ABS por Estado Clínico")+  #Título del gráfico
+  labs(x = "Logaritmo Jitter ABS (Jitter_abs)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)") 
+
+```
+
+Con el objetivo de aproximar la normalidad, se aplicó una transformación logarítmica log(1 + x). No obstante, tras la transformación, la variable continuó sin cumplir plenamente el supuesto de normalidad, p-value < 0.05.
+
+```{r Transformación Jitter_abs, echo=FALSE, message=FALSE, warning=FALSE}
+
+datos_ABS <- datos_ABS %>% 
+  mutate(Log_jitterABS = log1p(media)) 
+
+```
+
+```{r Comprobar distribución con datos transformados jitter_abs, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 4. Distribución de Jitter ABS transformado por Estado Clínico", fig.align='center'}
+#Realizamos una prueba de normalidad. Con el objetivo de determinar para comprobar si la transformación fue efectiva y la nueva variable (Log_jitterABS) procede de una población que sigue una distribución normal.
+shapiro.test(datos_ABS$Log_jitterABS[datos_ABS$Status == "0"])
+shapiro.test(datos_ABS$Log_jitterABS[datos_ABS$Status== "1"])
+
+
+datos_ABS %>%
+  ggplot(aes(x = Log_jitterABS, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución del Jitter ABS transformado por Estado Clínico")+  #Título del gráfico
+  labs(x = "Logaritmo Jitter ABS transformado (Log_JitteABS)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)") 
+```
+
+### 3.4 Análisis jitter_RAP
+
+```{r Agrupación datos jitter RAP, echo=FALSE, message=FALSE, warning=FALSE}
+datos_RAP <- datos_Parkinson %>% 
+  group_by(ID, Gender, Status) %>%  #agrupamos las variables según el ID, Género y Satatus
+  summarise( #calcula resúmenes por grupo
+    media = mean(Jitter_RAP), #Calculamos la media, mediana y desviación típica 
+            desvest = sd(Jitter_RAP),
+            mediana = median(Jitter_RAP)) %>%
+  ungroup() #Elimina el agrupamiento, esto lo usamos para evitar que nos de errores en el wilcox.test ya que esta funcion no entiende grupos
+
+```
+
+```{r Prueba de Shapiro-Wilk jitter_RAP, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 5. Distribución de la Media de Jitter RAP por Estado Clínico", fig.align='center'}
+#Realizamos una prueba de normalidad. 
+shapiro.test(datos_RAP$media[datos_RAP$Status == "0"])
+shapiro.test(datos_RAP$media[datos_RAP$Status== "1"])
+
+
+#Visualizamos la distribución de los datos transformados y confirmar las pruebas de normalidad de Shapiro-Wilk.
+
+datos_RAP %>%
+  ggplot(aes(x = media, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución del Jitter RAP por Estado Clínico")+  #Título del gráfico
+  labs(x = "Logaritmo Jitter RAP (Jitter_RAP)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)") 
+```
+
+Se evaluó la distribución de la media del jitter RAP en los grupos control y Parkinson mediante la **Prueba de Shapiro-Wilk**, observándose desviaciones significativas de la normalidad en ambos grupos p value<0,05.
+
+Con el objetivo de aproximar la normalidad, se aplicó una transformación logarítmica log(1 + x). No obstante, tras la transformación, la variable continuó sin cumplir plenamente el supuesto de normalidad,p-value < 0.05.
+
+```{r Comprobar distribución con datos transformados jitter_RAP, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 6. Distribución de Jitter RAP transformado por Estado Clínico", fig.align='center'}
+#Transformsmos jitter_RAP
+datos_RAP <- datos_RAP %>% 
+  mutate(Log_jitterRAP = log1p(media)) 
+
+#Realizamos una prueba de normalidad. Con el objetivo de determinar para comprobar si la transformación fue efectiva y la nueva variable (Log_jitterABS) procede de una población que sigue una distribución normal.
+shapiro.test(datos_RAP$Log_jitterRAP[datos_RAP$Status == "0"])
+shapiro.test(datos_RAP$Log_jitterRAP[datos_RAP$Status== "1"])
+
+
+datos_RAP %>%
+  ggplot(aes(x = Log_jitterRAP, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución del Jitter Rap transformado por Estado Clínico")+  #Título del gráfico
+  labs(x = "Logaritmo Jitter RAP (Log_JitterRAP)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)") 
+
+```
+
+
+### 3.5 Análisis jitter_PPQ
+
+```{r Agrupación datos jitter PPQ, echo=FALSE, message=FALSE, warning=FALSE}
+datos_PPQ <- datos_Parkinson %>% 
+  group_by(ID, Gender, Status) %>%  #agrupamos las variables según el ID, Género y Satatus
+  summarise( #calcula resúmenes por grupo
+    media = mean(Jitter_PPQ), #Calculamos la media, mediana y desviación típica 
+            desvest = sd(Jitter_PPQ),
+            mediana = median(Jitter_PPQ)) %>%
+  ungroup() #Elimina el agrupamiento, esto lo usamos para evitar que nos de errores en el wilcox.test ya que esta funcion no entiende grupos
+```
+
+```{r Prueba de Shapiro-Wilk jitter_PPQ, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 7. Distribución de la Media de Jitter PPQ por Estado Clínico", fig.align='center'}
+
+#Realizamos una prueba de normalidad. 
+shapiro.test(datos_PPQ$media[datos_PPQ$Status == "0"])
+shapiro.test(datos_PPQ$media[datos_PPQ$Status== "1"])
+
+#Los datos no siguen una distribución normal
+
+#Visualizamos la distribución de los datos y confirmar las pruebas de normalidad de Shapiro-Wilk.
+
+datos_PPQ %>%
+  ggplot(aes(x = media, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución del Jitter PPQ por Estado Clínico")+  #Título del gráfico
+  labs(x = "Jitter PPQ (Jitter_PPQ)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)") 
+
+```
+
+
+Se evaluó la distribución de la media del jitter PPQ en los grupos control y Parkinson mediante la **Prueba de Shapiro-Wilk**, observándose desviaciones significativas de la normalidad en ambos grupos p-value < 0.05.
+
+Con el objetivo de aproximar la normalidad, se aplicó una transformación logarítmica log(1 + x). No obstante, tras la transformación, la variable continuó sin cumplir plenamente el supuesto de normalidad, p-value < 0.05.
+
+```{r Comprobar distribución con datos transformados jitter_PPQ, echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 8. Distribución de Jitter PPQ transformado por Estado Clínico", fig.align='center'}
+
+datos_PPQ <- datos_PPQ %>% 
+  mutate(Log_jitterPPQ = log1p(media)) 
+
+#Realizamos una prueba de normalidad. Con el objetivo de determinar para comprobar si la transformación fue efectiva y la nueva variable (Log_jitterABS) procede de una población que sigue una distribución normal.
+shapiro.test(datos_PPQ$Log_jitterPPQ[datos_PPQ$Status == "0"])
+shapiro.test(datos_PPQ$Log_jitterPPQ[datos_PPQ$Status== "1"])
+
+
+datos_PPQ %>%
+  ggplot(aes(x = Log_jitterPPQ, fill = factor(Status))) + 
+  geom_density(alpha = 0.6, show.legend = TRUE) +
+  ggtitle("Distribución del Jitter PPQ transformado por Estado Clínico")+  #Título del gráfico
+  labs(x = "Logaritmo Jitter PPQ (Log_JitterPPQ)", y = "Densidad", fill = "Estado\n(0=Control, 1=Parkinson)") 
+
+```
+
+### 3.6 Análisis de la variable Shimmer
+
+#### Correlación de las variables de Shimmer
+
+Estudiamos la correlación entre las variables de Shimmer para evaluar el grado de relación entre ellas, ayudando a seleccionar aquellas más representativas para el análisis.
+
+
+```{r correlacion, echo=FALSE, message=FALSE, warning=FALSE,}
+shimmer_vars <- datos_Parkinson[
+  ,c("Shim_loc", "Shim_dB", "Shim_APQ3", "Shim_APQ5", "Shi_APQ11")
+  ]
+
+shimmer_cor <- cor(
+  shimmer_vars, 
+  use = "complete.obs", 
+  method = "pearson"
+  )
+
+shimmer_cor  #Shim_dB es la unica que no se correlaciona con las demás, elegimos esa junto con Shim_APQ5 para el analisis
+```
+
+```{r tabla1, echo=FALSE, message=FALSE, warning=FALSE,}
+
+colnames(shimmer_cor) <- c("Shim loc", "Shim dB", "APQ3", "APQ5", "APQ11")
+
+# Cambiar nombres de filas (rownames)
+rownames(shimmer_cor) <- colnames(shimmer_cor)
+
+
+knitr::kable(
+  shimmer_cor, 
+  caption = "Matriz de correlación entre las variables de Shimmer",
+  digits = 3,
+  align = "c",
+  format = "pipe"
+  ) 
+```
+
+**Nota:** Los valores corresponden al coeficiente de correlación de Pearson.
+
+
+Las variables Shim loc, APQ3, APQ5, APQ11 estan muy correlacionadas, por lo que elegimos **APQ5** para representar a este grupo y así evitar datos redundates. La variable **Shim dB** aporta información diferente al no estar correlacionada con las demás.
+
+#### Preparación del dataset para las variables Shim dB y APQ5
+
+Se seleccionan las variables **Shim db** y **APQ5** y se calculan las medias de cada sujeto, facilitando la comparación entre individuos sanos y con Parkinson
+
+```{r Shim-dB-APQ5, echo=FALSE, message=FALSE, warning=FALSE,}
+medias_Shim <- datos_Parkinson %>% 
+  group_by(ID) %>% #Agrupamos las variables según el nº del sujeto para así poder promediar de manera más fácil el resultado de las tres grabaciones en todas las variables
+  summarise(
+    Status = first(Status), 
+    across( #Nos permite aplicar funciones a una serie de variables
+      c(Shim_dB, Shim_APQ5), 
+      list( #Nos permite crear una lista con las funciones que pensamos utilizar para este dataset
+        Media = \(x) mean(x, na.rm = TRUE) #Creamos una función para calcular la media entre las tres grabaciones de cada sujeto
+      ),     
+      .names = "{.col}_{.fn}" #Nos permite crear variables a partir del nombre de columnas existentes y funciones creadas
+    )
+  )
+```
+
+#### 3.6.1 Estudio de la variable Shimmer dB
+##### Prueba de normalidad (Shapiro-Wilk)
+
+Usamos el test de Shapiro-Wilk para evaluar la normalidad de la variable Shimmer db dentro de los grupos de individuos sanos y con Parkinson.
+
+```{r normalidad-dB, echo=FALSE, message=FALSE, warning=FALSE,}
+
+shapiro.test(
+  medias_Shim$Shim_dB_Media[medias_Shim$Status == "0"]
+  )              #p=0,27; p-valor > 0,05 --> distribución normal
+
+shapiro.test(
+  medias_Shim$Shim_dB_Media[medias_Shim$Status == "1"]
+  )              #p=8.729e-12; p-valor < 0,05 --> distribución no normal
+
+```
+
+##### Comparación entre grupos (Mann-Whitney/Wilcoxon)
+
+Como la distribución entre grupos no es normal, usamos la prueba de suma de rangos de Wilcoxon, o más conocida como la prueba U de Mann-Whitney, que nos permite comparar dos muestras independientes que no cumplen con la normalidad para determinar si existen diferencias significativas entre las medianas de ambas, considerándose una alternativa a la prueba t-student, usada cuando sí existe la normalidad. 
+
+```{r wilcoxon-tamaño-dB, echo=FALSE, message=FALSE, warning=FALSE,}
+
+wilcox.test(
+  Shim_dB_Media ~ Status, 
+  data = medias_Shim
+  )          #p = 0,035; p-valor < 0,05 existen diferencias estadísticamente significativas
+
+library(effsize)
+
+cliff.delta(Shim_dB_Media ~ Status, data = medias_Shim)        #delta= -0,27375; ligera diferencia, el tamaño del efecto es despreciable
+
+```
+
+
+
+#### 3.6.2 Estudio de la variable APQ5
+##### Prueba de normalidad (Shapiro-Wilk)
+
+Usamos el test de Shapiro-Wilk para evaluar la normalidad de la variable Shimmer db dentro de los grupos de individuos sanos y con Parkinson.
+
+```{r normalidad-APQ5, echo=FALSE, message=FALSE, warning=FALSE,}
+
+shapiro.test(
+  medias_Shim$Shim_APQ5_Media[medias_Shim$Status == "0"]
+  )             #p=0,105; p-valor > 0,05 --> distribución normal
+
+shapiro.test(
+  medias_Shim$Shim_APQ5_Media[medias_Shim$Status == "1"]
+  )            #p=5.118e-06; p-valor < 0,05 --> distribución no normal
+
+```
+
+##### Comparación entre grupos (Mann-Whitney/Wilcoxon)
+
+Como la distribución entre grupos no es normal, usamos la prueba de suma de rangos de Wilcoxon, o más conocida como la prueba U de Mann-Whitney, que nos permite comparar dos muestras independientes que no cumplen con la normalidad para determinar si existen diferencias significativas entre las medianas de ambas, considerándose una alternativa a la prueba t-student, usada cuando sí existe la normalidad.
+
+```{r wilcoxon-tamaño-APQ5, echo=FALSE, message=FALSE, warning=FALSE,}
+
+wilcox.test(
+  Shim_APQ5_Media ~ Status, 
+  data = medias_Shim
+  )          #p = 0,03097; p-valor < 0,05 existen diferencias estadísticamente significativas
+
+library(effsize)
+
+cliff.delta(Shim_APQ5_Media ~ Status, data = medias_Shim)        #delta= -0,28; ligera diferencia, el tamaño del efecto es despreciable
+
+```
+
+### 3.7 Análisis Univariante de las variables no lineales
+
+```{r Análisis_Univ}
+
+#Crearemos un nuevo dataset utilizando el ya procesado para poder trabajar con un único valor por cada sujeto y las variables no lineales
+
+DP_Univ <- datos_Parkinson %>% 
+  group_by(ID) %>% #Agrupamos las variables según el nº del sujeto para así poder promediar de manera más fácil el resultado de las tres grabaciones en todas las variables
+  mutate(Status = as.factor(if_else(Status == 0, "Healthy", "PD"))) %>% #Cambia los valores numéricos de la variable "Status" a valores categóricos
+  summarise(
+    Status = first(Status), 
+    across( #Nos permite aplicar funciones a una serie de variables
+      c(RPDE, PPE, DFA, GNE), 
+      list( #Nos permite crear una lista con las funciones que pensamos utilizar para este dataset
+        Media = \(x) mean(x, na.rm = TRUE) #Creamos una función para calcular la media entre las tres grabaciones de cada sujeto
+      ),     
+      .names = "{.col}_{.fn}" #Nos permite crear variables a partir del nombre de columnas existentes y funciones creadas
+    )
+  )
+
+```
+
+```{r Visualización_DP_Univ}
+
+knitr::kable(
+  head(DP_Univ, n = 10),
+  caption = "Variables No Lineales",
+  align = "c",
+  booktabs = TRUE
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center"
+  ) %>% 
+  column_spec(1, bold = TRUE)
+
+```
+
+#### 3.7.1 Estudio RPDE
+```{r Univ_RPDE}
+
+shapiro.test(DP_Univ$RPDE_Media[DP_Univ$Status == "Healthy"])
+shapiro.test(DP_Univ$RPDE_Media[DP_Univ$Status == "PD"])
+#La prueba de Shapiro-Wilk se usa para determinar si los datos de una muestra se ajustan a una distribución normal (Campana de Gauss). Saber esto resuelve nuestras dudas a la hora de realizar un tipo de test u otro para nuestro análisis.
+#Los resultados mostraron una distribución compatible con la normalidad en ambos grupos (p = 0.411, p = 0.3977)
+
+wilcox.test(RPDE_Media ~ Status, data = DP_Univ)
+#La prueba de suma de rangos de Wilcoxon, o más conocida como la prueba U de Mann-Whitney nos permite comparar dos muestras independientes que no cumplen con la normalidad para determinar si existen diferencias significativas entre las medianas de ambas, considerándose una alternativa a la prueba t-student. Se basa en ordenar y sumar los rangos de los datos combinados de ambos grupos.
+#En este caso, la usamos para comparar los valores de RPDE entre los sujetos sanos y enfermos, ya que gracias al test shapiro sabemos que la distribución de estos no alcanza la normalidad.
+#Los resultados no mostraron diferencias estadísticamente significativas en los valores de DFA entre sujetos con Parkinson y controles sanos (p = 0.512).
+
+cliff.delta(RPDE_Media ~ Status, data = DP_Univ)
+#El tamaño del efecto estimado es despreciable (δ = -0.08625), lo que refuerza la ausencia de diferencias sistemáticas de los resultados anteriores.
+
+```
+
+#### 3.7.2 Estudio PPE
+
+```{r Univ_PPE}
+shapiro.test(DP_Univ$PPE_Media[DP_Univ$Status == "Healthy"])
+shapiro.test(DP_Univ$PPE_Media[DP_Univ$Status == "PD"])
+#Los resultados mostraron desviaciones significativas de la normalidad en ambos grupos (p = 0.002315, p = 0.02086) 
+
+wilcox.test(PPE_Media ~ Status, data = DP_Univ)
+#Los resultados no mostraron diferencias estadísticamente significativas en los valores de DFA entre sujetos con Parkinson y controles sanos (p = 0.268).
+
+cliff.delta(PPE_Media ~ Status, data = DP_Univ)
+#Aunque el tamaño del efecto estimado esta vez sea pequeño o casi despreciable (δ = -0.145), se sigue reforzando la ausencia de diferencias sistemáticas de los resultados anteriores.
+```
+
+#### 3.7.3 Estudio DFA
+
+```{r Univ_DFA}
+shapiro.test(DP_Univ$DFA_Media[DP_Univ$Status == "Healthy"])
+shapiro.test(DP_Univ$DFA_Media[DP_Univ$Status == "PD"])
+#Los resultados mostraron distribuciones compatibles con la normalidad en ambos grupos (p = 0.07122, p = 0.8303) 
+
+
+wilcox.test(DFA_Media ~ Status, data = DP_Univ)
+#Los resultados no mostraron diferencias estadísticamente significativas en los valores de DFA entre sujetos con Parkinson y controles sanos (p = 0.7558).
+
+cliff.delta(DFA_Media ~ Status, data = DP_Univ)
+#El tamaño del efecto estimado es despreciable (δ = -0.04125), lo que refuerza la ausencia de diferencias sistemáticas de los resultados anteriores.
+```
+
+### 3.8 Análisis de la variabilidad intra-sujeto
+
+```{r Dispersión_IS}
+
+DP_var_SD <- datos_Parkinson %>%
+  group_by(ID, Status) %>%
+  mutate(Status = as.factor(if_else(Status == 0, "Healthy", "PD"))) %>%
+  summarise( # La desviación estándar (SD) mide cuánto se dispersan los valores respecto a la media. En nuestro caso, mide la variabilidad promedio de la fonación, capturando la inestabilidad global y las fluctuaciones continuas de la voz. Valores altos de este indicarían que el sujeto no puede controlar de manera estable la voz. Sin embargo presenta la desventaja de que es muy sensible a outliers y que la variable debe de ser simétrica sin colas largas.
+    PPE_SD  = sd(PPE, na.rm = TRUE),
+    RPDE_SD = sd(RPDE, na.rm = TRUE),
+    DFA_SD  = sd(DFA, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+DP_var_IQR <- datos_Parkinson %>% 
+  group_by(ID, Status) %>%
+  mutate(Status = as.factor(if_else(Status == 0, "Healthy", "PD"))) %>%
+  summarise( # El rango intercuartílico (IQR) representa la diferencia entre el percentil 75 y 25, midiendo la variabilidad central ignorando los extremos y capturando las fluctuaciones frecuentes y el comportamiento habitual de la voz. Valores altos de este indicarían irregularidades persistentes en la voz del sujeto con Parkinson. Con 
+    PPE_IQR  = IQR(PPE, na.rm = TRUE),
+    RPDE_IQR = IQR(RPDE, na.rm = TRUE),
+    DFA_IQR  = IQR(DFA, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r Visualización_DP_var_IQR}
+
+knitr::kable(
+  head(DP_var_IQR, n = 10),
+  caption = "Variabilidad Intra-sujeto (IQR)",
+  align = "c",
+  booktabs = TRUE
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center"
+  ) %>% 
+  column_spec(1, bold = TRUE)
+
+```
+
+#### 3.8.1 Estudio RPDE
+
+```{r IQR_RPDE}
+shapiro.test(DP_var_IQR$RPDE_IQR[DP_var_IQR$Status == "Healthy"])
+shapiro.test(DP_var_IQR$RPDE_IQR[DP_var_IQR$Status == "PD"])
+#Los resultados mostraron una distribución compatible con la normalidad en el grupo control (p = 0.1543), mientras que en el grupo con parkinson se detectó una desviación significativa a la normalidad (p = 0.009205)
+#Esto nos da a entender que la variabilidad de RPDE es más heterogénea en PD, dando a entender que puede tratarse de una mayor diversidad de patrones dinámicos.
+
+wilcox.test(RPDE_IQR ~ Status, data = DP_var_IQR)
+#Los resultados no mostraron diferencias estadísticamente significativas en los valores de DFA entre sujetos con Parkinson y controles sanos (p = 0.512).
+
+cliff.delta(RPDE_IQR ~ Status, data = DP_var_IQR)
+#El tamaño del efecto estimado es despreciable (δ = -0.08625), lo que refuerza la ausencia de diferencias sistemáticas en la dispersión intra-sujeto entre grupos.
+```
+
+#### 3.8.2 Estudio PPE
+
+```{r IQR_PPE}
+shapiro.test(DP_var_IQR$PPE_IQR[DP_var_IQR$Status == "Healthy"])
+shapiro.test(DP_var_IQR$PPE_IQR[DP_var_IQR$Status == "PD"])
+#Los resultados mostraron desviaciones significativas de la normalidad en ambos grupos (p = 0.005638, p = 0.0006529)
+#
+
+wilcox.test(PPE_IQR ~ Status, data = DP_var_IQR)
+#Los resultados no mostraron diferencias estadísticamente significativas en los valores de DFA entre sujetos con Parkinson y controles sanos (p = 0.6425).
+
+cliff.delta(PPE_IQR ~ Status, data = DP_var_IQR)
+#El tamaño del efecto estimado es despreciable (δ = -0.06125), lo que refuerza la ausencia de diferencias sistemáticas en la dispersión intra-sujeto entre grupos.
+
+```
+
+#### 3.8.3 Estudio DFA
+
+```{r IQR_DFA}
+
+shapiro.test(DP_var_IQR$DFA_IQR[DP_var_IQR$Status == "Healthy"])
+shapiro.test(DP_var_IQR$DFA_IQR[DP_var_IQR$Status == "PD"])
+#Los resultados mostraron una distribución compatible con la normalidad en el grupo control (p = 0.1279), mientras que en el grupo con parkinson se detectó una desviación significativa a la normalidad (p = 0.002831)
+#Esto nos da a entender que la variabilidad de DFA es más heterogénea en PD, dando a entender que puede tratarse de una mayor diversidad de patrones dinámicos.
+
+wilcox.test(DFA_IQR ~ Status, data = DP_var_IQR)
+#Los resultados no mostraron diferencias estadísticamente significativas en los valores de DFA entre sujetos con Parkinson y controles sanos (p = 0.92).
+
+cliff.delta(DFA_IQR ~ Status, data = DP_var_IQR)
+#El tamaño del efecto estimado es despreciable (δ = -0.01375), lo que refuerza la ausencia de diferencias sistemáticas en la dispersión intra-sujeto entre grupos.
+
+```
+
+## Resultados
+
+### 4.1 Resultados jitter
+
+Dado que ninguna de las variables de **jitter** analizadas (jitter relativo, jitter absoluto, jitter RAP y jitter PPQ) cumplió el supuesto de normalidad en ambos grupos, tal como se confirmó mediante la prueba de **Shapiro–Wilk** p-value < 0.05, se empleó la prueba no paramétrica de **Wilcoxon–Mann–Whitney** para comparar los valores entre el grupo control y los pacientes con enfermedad de Parkinson. Esta estrategia permitió evaluar diferencias estadísticas sin asumir normalidad en los datos.
+
+#### 4.1.1 Resultados Jitter_rel
+
+```{r Resultados Jitter_rel,  echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 9. Jitter_rel según el estado clínico", fig.align='center'}
+
+wilcox.test(log_JitterREL ~ Status, data = datos_REL)
+
+datos_REL %>% 
+  ggplot(aes(x = factor(Status), y = log_JitterREL, col = factor(Status))) +
+  geom_boxplot(show.legend = FALSE, outliers = FALSE, ) +
+  stat_summary(fun.y = mean, geom = "point", shape= 20, size= 5, color= "blue")+ # Se añade el valor de la media de cada grupo para facilitar la interpretación
+  geom_jitter(alpha = 0.4, width = 0.25, size = 2, show.legend = F) +
+  labs(title = "Jitter según estado clínico", x = "Estado (0 = Sano, 1 = Parkinson)", y = "Log_jitter")
+```
+
+
+Tras aplicar el wilcox.test en la variable transformada, el valor que obtenemos de **<span style="background-color: yellow;">p-value = 0.06517>0.05</span>**. Por tanto, no hay diferencias significativas, NO rechazamos la Hipótesis Nula (H0), la inestabilidad vocal (Jitter_rel) no difiere significativamente entre los pacientes con Parkinson y el grupo de control.
+
+<!-- <span: contenedor genérico en HTML. Se utiliza para agrupar o aplicar estilo a una pequeña porción de texto sin iniciar una nueva línea. 
+style: permite aplicar reglas de CSS directamente a este elemento <span>.
+="background-color: yellow; Cambio el color de fondo del texto
+</span>: Cierra el contenedor, asegurando que el fondo amarillo no se extienda más allá de este texto clave.-->
+
+#### 4.1.2 Resultados Jitter_abs
+
+```{r Resultados Jitter_abs,  echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 10. Jitter_abs según el estado clínico", fig.align='center'}
+
+wilcox.test(Log_jitterABS ~ Status, data = datos_ABS)
+
+datos_ABS %>% 
+  ggplot(aes(x = factor(Status), y = Log_jitterABS, col = factor(Status))) +
+  geom_boxplot(show.legend = FALSE, outliers = FALSE, ) +
+  stat_summary(fun.y = mean, geom = "point", shape= 20, size= 5, color= "blue")+ 
+  geom_jitter(alpha = 0.4, width = 0.25, size = 2, show.legend = F) +
+  labs(title = "Jitter_abs según estado clínico", x = "Estado (0 = Sano, 1 = Parkinson)", y = "Log_jitterABS")
+```
+
+ Tras aplicar el wilcox.test en la variable transformada, el valor que obtenemos de **<span style="background-color: yellow;">p-value = 0.5243 > 0.05</span>**. Por tanto, no hay diferencias significativas, NO rechazamos la Hipótesis Nula (H0), la inestabilidad vocal (Jitter_abs) no difiere significativamente entre los pacientes con Parkinson y el grupo de control.
+ 
+#### 4.1.3 Resultados Jitter_RAP
+ 
+```{r Resultados Jitter_RAP,  echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 11. Jitter_RAP según el estado clínico", fig.align='center'}
+
+wilcox.test(Log_jitterRAP ~ Status, data = datos_RAP)
+
+datos_RAP %>% 
+  ggplot(aes(x = factor(Status), y = Log_jitterRAP, col = factor(Status))) +
+  geom_boxplot(show.legend = FALSE, outliers = FALSE, ) +
+  stat_summary(fun.y = mean, geom = "point", shape= 20, size= 5, color= "blue")+ 
+  geom_jitter(alpha = 0.4, width = 0.25, size = 2, show.legend = F) +
+  labs(title = "Jitter_RAP según estado clínico", x = "Estado (0 = Sano, 1 = Parkinson)", y = "Log_jitterRAP")
+```
+ 
+Tras aplicar el wilcox.test en la variable transformada, el valor que obtenemos de **<span style="background-color: yellow;">p-value = 0.03416<0.05</span>**. Por tanto, hay diferencias significativas, aceptamos la Hipótesis alternativa (H1), existe una diferencia significativa en la distribución del Jitter RAP entre el grupo Control y el grupo Parkinson y rechazamos la Hipótesis Nula (H0).
+
+
+#### 4.1.4 Resultados Jitter_PPQ
+
+```{r Resultados Jitter_PPQ,  echo=FALSE, message=FALSE, warning=FALSE, fig.cap= "Fig 12. Jitter_PPQ según el estado clínico", fig.align='center'}
+
+wilcox.test(Log_jitterPPQ ~ Status, data = datos_PPQ)
+
+datos_PPQ %>% 
+  ggplot(aes(x = factor(Status), y = Log_jitterPPQ, col = factor(Status))) +
+  geom_boxplot(show.legend = FALSE, outliers = FALSE, ) +
+  stat_summary(fun.y = mean, geom = "point", shape= 20, size= 5, color= "blue")+ 
+  geom_jitter(alpha = 0.4, width = 0.25, size = 2, show.legend = F) +
+  labs(title = "Jitter_PPQ según estado clínico", x = "Estado (0 = Sano, 1 = Parkinson)", y = "Log_jitterPPQ")
+```
+
+Tras aplicar el wilcox.test en la variable transformada, el valor que obtenemos de **<span style="background-color: yellow;">p-value = 0.03021<0.05</span>**. Por tanto, hay diferencias significativas, aceptamos la Hipótesis alternativa (H1), existe una diferencia significativa en la distribución del Jitter PPQ entre el grupo Control y el grupo Parkinson y rechazamos la Hipótesis Nula (H0).
+
+
+### 4.5 Resultados Shimmer dB
+
+La prueba de Shapiro–Wilk indicó que la variable Shim_dB sigue una distribución normal en el grupo sano (p = 0,27), mientras que en el grupo de pacientes con Parkinson no se cumple el supuesto de normalidad (p = 8.729e-12).
+
+Tras aplicar el wilcox.test, los resultados mostraron diferencias significativas entre los grupos de individuos sanos y con Parkinson (p = 0.035), por tanto aceptamos la hipótesis alternativa (H1), la perturbación de la amplitud medida por Shim_dB difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos, y rechazamos la hipótesis nula (H0)
+
+
+```{r boxp-dB, echo=FALSE}
+
+medias_Shim$Status <- factor(medias_Shim$Status,
+                             levels = c(0, 1),
+                             labels = c("Sano", "Parkinson"))
+
+ggplot(medias_Shim, 
+       aes(x = Status, 
+           y = Shim_dB_Media)) +
+  geom_boxplot(fill = "lightblue", col = "darkblue") +
+  labs(
+    x = "Estado",
+    y = "Medida de la perturbación de la amplitud en decibelios (Shimmer dB)",
+    title = "Comparación de la variabilidad de amplitud en decibelios entre individuos sanos y pacientes con Parkinson"
+  ) +
+  theme_bw()
+  
+
+```
+
+Las cajas son muy similares en mediana, los valores típicos de Shimmer dB no cambian demasiado entre individuos sanos y enfermos de Parkinson. Hay algunos valores extremos en el grupo de Parkinson (>6 dB), lo que indica casos individuales con amplitud muy irregular.
+
+### 4.6 Resultados de APQ5
+
+La prueba de Shapiro–Wilk indicó que la variable APQ5 sigue una distribución normal en el grupo sano (p = 0,105), mientras que en el grupo de pacientes con Parkinson no se cumple el supuesto de normalidad (p = 5.118e-06).
+
+Tras aplicar el wilcox.test, los resultados mostraron diferencias significativas entre los grupos de individuos sanos y con Parkinson (p = 0.03097), por lo que aceptamos la hipótesis alternativa (H1), la perturbación de la amplitud medida por Shim_APQ5 difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos, y rechazamos la hipótesis nula (H0)
+
+```{r boxp-APQ5, echo=FALSE}
+
+
+ggplot(medias_Shim, 
+       aes(x = Status, 
+           y = Shim_APQ5_Media)) +
+  geom_boxplot(fill = "lightgreen", col = "darkgreen") +
+  labs(
+    x = "Estado",
+    y = "Cociente de perturbación de amplitud (APQ5)",
+    title = "Comparación de la variabilidad de amplitud (APQ5) entre individuos sanos y pacientes con Parkinson"
+  ) +
+  theme_bw()
+  
+
+```
+
+La mediana de APQ5 en pacientes con Parkinson (PD) es superior a la de los individuos sanos, lo que indica que, en promedio, los pacientes presentan mayor irregularidad en la amplitud de la voz. Además, la caja correspondiente a PD es más alta, reflejando una mayor dispersión de los valores y, por lo tanto, una mayor variabilidad vocal. La presencia de algunos valores extremos en el grupo de PD sugiere que ciertos pacientes experimentan alteraciones más pronunciadas, posiblemente asociadas a etapas avanzadas de la enfermedad.
+
+### 4.7 Resultados análisis univariante
+
+```{r Fig_Univ_RPDE, fig.align = 'center', fig.cap= "Fig. Boxplot RPDE ~ Status"}
+
+ggplot(DP_Univ, aes(x = factor(Status), y = RPDE_Media, colour = Status)) +
+  geom_boxplot(show.legend = F) +
+  labs(
+    x = "Grupo",
+    y = "Recurrence Period Density Entropy (RPDE)",
+    title = "Comparación valores promedio RPDE entre sujetos control y Parkinson"
+  ) 
+
+```
+
+```{r Fig_Univ_PPE, fig.align='center', fig.cap= "Figura. Boxplot PPE ~ Status"}
+
+ggplot(DP_Univ, aes(x = factor(Status), y = PPE_Media, colour = Status)) +
+  geom_boxplot(show.legend = F) +
+  labs(
+    x = "Grupo",
+    y = "Pitch Period Entropy (PPE)",
+    title = "Comparación valores promedio PPE entre sujetos control y Parkinson"
+  )
+
+```
+
+```{r Fig_Univ_DFA, fig.align = 'center', fig.cap= "Figura. Boxplot DFA ~ Status"}
+ggplot(DP_Univ, aes(x = factor(Status), y = DFA_Media, colour = Status)) +
+  geom_boxplot(show.legend = F) +
+  labs(
+    x = "Grupo",
+    y = "Detrended Flunctuation Analysis (DFA)",
+    title = "Comparación valores promedio RPDE entre sujetos control y Parkinson"
+  )
+```
+
+### 4.8 Resultados análisis variabilidad intra-sujeto
+
+```{r Fig_IQR_RPDE, fig.align = 'center', fig.cap= "Figura. Boxplot-jitter RPDE ~ Status"}
+ggplot(DP_var_IQR, aes(x = Status, y = RPDE_IQR, colour = Status)) +
+  geom_boxplot(show.legend = F) +
+  geom_jitter(width = 0.1, alpha = 0.7, show.legend = F) +
+  labs(
+    x = "Grupo",
+    y = "Dispersión intra-sujeto de RPDE (IQR)",
+    title = "Análisis de dispersión intra-sujeto de RPDE"
+  )
+```
+
+```{r Fig_IQR_PPE, fig.align = 'center', fig.cap= "Figura. Boxplot-jitter PPE ~ Status"}
+ggplot(DP_var_IQR, aes(x = Status, y = PPE_IQR, colour = Status)) +
+  geom_boxplot(show.legend = F) +
+  geom_jitter(width = 0.1, alpha = 0.7, show.legend = F) +
+  labs(
+    x = "Grupo",
+    y = "Dispersión intra-sujeto de PPE (IQR)",
+    title = "Análisis de dispersión intra-sujeto de PPE"
+  )
+```
+
+```{r Fig_IQR_DFA, fig.align = 'center', fig.cap= "Figura. Boxplot-jitter DFA ~ Status"}
+
+ggplot(DP_var_IQR, aes(x = Status, y = DFA_IQR, colour = Status)) +
+  geom_boxplot(show.legend = F) +
+  geom_jitter(width = 0.1, alpha = 0.7, show.legend = F) +
+  labs(
+    x = "Grupo",
+    y = "Dispersión intra-sujeto de DFA (IQR)",
+    title = "Análisis de dispersión intra-sujeto de DFA"
+  )
+```
+
+## Conclusiones
+
+Los hallazgos de este estudio sugieren que ciertas métricas de voz, como Shim_APQ5, Jitter_RAP y Jitter_PPQ, tienen potencial para actuar como biomarcadores acústicos de la enfermedad de Parkinson, ya que permiten detectar irregularidades en la amplitud y estabilidad vocal. Otras métricas, como Shim_dB, Jitter_rel, Jitter_abs y las variables no lineales, muestran una capacidad limitada por sí solas, aunque podrían ser útiles en combinación con análisis más complejos que consideren la dinámica temporal de la voz.
+
+En general, esto indica que la selección de métricas sensibles y la consideración de la estructura temporal de la señal son esenciales para desarrollar herramientas de diagnóstico y seguimiento confiables basadas en la voz. Así, la investigación sobre biomarcadores vocales puede contribuir significativamente a la detección temprana y al monitoreo de la enfermedad de Parkinson.
+
+![](Pantallazo_Kaggle.PNG)
+
+## Información de la sesión y referencias
+
+```{r sessionInfo, echo=FALSE}
+session <- sessionInfo()
+print(session)
+```
+
