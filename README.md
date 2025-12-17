@@ -3,8 +3,8 @@
 ## 📄 Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT.  
-Consulta el archivo [LICENSE]() para más detalles.
+Consulta el archivo LICENSE para más detalles.
 
 ## © Copyright
 
-© 2025 TRBonilloPulido. Todos los derechos reservados.
+© 2025 RBonilloPulido. Todos los derechos reservados.
