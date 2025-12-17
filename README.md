@@ -1,5 +1,7 @@
 # B6.-Parkinson-replicated-acoustic-features
 
+Integrantes del grupo: Raúl Bonillo Pulido, Elena Barro León y Paula Merino Purificación
+
 ## 📄 Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT.  
