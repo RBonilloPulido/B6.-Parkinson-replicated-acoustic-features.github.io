@@ -897,7 +897,7 @@ ggplot(DP_Univ, aes(x = factor(Status), y = DFA_Media, colour = Status)) +
   labs(
     x = "Grupo",
     y = "Detrended Flunctuation Analysis (DFA)",
-    title = "Comparación valores promedio RPDE entre sujetos control y Parkinson"
+    title = "Comparación valores promedio DFA entre sujetos control y Parkinson"
   )
 ```
 
@@ -951,5 +951,6 @@ En general, esto indica que la selección de métricas sensibles y la considerac
 session <- sessionInfo()
 print(session)
 ```
+
 
 
