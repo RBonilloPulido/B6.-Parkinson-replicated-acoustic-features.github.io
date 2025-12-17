@@ -1,8 +1,8 @@
 # B6.-Parkinson-replicated-acoustic-features
 
 Integrantes del grupo: 
-  Raúl Bonillo Pulido (b12bopur@uco.es)
-  Elena Barro León (t02balee@uco.es)
+  Raúl Bonillo Pulido (b12bopur@uco.es),
+  Elena Barro León (t02balee@uco.es),
   Paula Merino Purificacion (b12mepup@uco.es)
 
 ## 📄 Licencia
