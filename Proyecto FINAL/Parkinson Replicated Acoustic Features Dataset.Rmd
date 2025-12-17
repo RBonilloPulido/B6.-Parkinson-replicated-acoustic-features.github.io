@@ -49,8 +49,8 @@ library(dplyr) # Para la manipulación de datos, mutate(), select(), etc.
 library(ggplot2) # Para la visualización de datos, geom_point(), geom_histogram(). etc.
 library(readr) #Para leer los datos.
 library(DT) #Permite crear tablas interactivas, como nuestro dataset es muy grande este tipo de formato es mucho más cómodo
-library(kableExtra) #Nos serviráa a la hora de poder customizar las tablas, mejorando su diseño y presentación
-library(effsize) # Para poder calcular el Cliff's Delta que nos servirá para ver el tamaño del efecto estimado al realziar la prueba de Mann-Whittney
+library(kableExtra) #Nos servirá a la hora de poder personalizar las tablas, mejorando su diseño y presentación
+library(effsize) # Para poder calcular el Cliff's Delta que nos servirá para ver el tamaño del efecto estimado al realizar la prueba de Mann-Whittney
 ```
 
 <!-- Leemos los datos que vamos a utilizar. Como queremos que el código se ejecute, pero no que aparezca en el documento final, excluímos los avisos y mensajes echo=FALSE (Elimina el código, solo sale el resultado), warning=FALSE (No aparece el error ni el mensaje de error), message=FALSE (Se ejecuta el código pero no aparece el mensaje) --> 
@@ -139,41 +139,41 @@ El **Jitter PPQ** mide la variación promedio del período vocal, suavizada sobr
 
 **Shim_dB** mide la perturbación de la amplitud de la voz en decibelios, reflejando variaciones absolutas de la intensidad vocal entre ciclos consecutivos.
 
-- **H0**: La perturbación de la amplitud medida por Shim_dB es similar entre individuos sanos y pacientes con Parkinson, indicando que la regularidad de la voz no se ve afectada por la enfermedad.
+- *H0*: La perturbación de la amplitud medida por Shim_dB es similar entre individuos sanos y pacientes con Parkinson, indicando que la regularidad de la voz no se ve afectada por la enfermedad.
 
-- **H1**: La perturbación de la amplitud medida por Shim_dB difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos.
+- *H1*: La perturbación de la amplitud medida por Shim_dB difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos.
 
 **6. Shimmer loc**
 
 **Shim_loc** mide la perturbación local de la amplitud, evaluando las variaciones de amplitud entre ciclos consecutivos de manera muy sensible a cambios puntuales.
 
-- **H0**: No hay diferencias significativas en Shim_loc entre individuos sanos y pacientes con Parkinson
+- *H0*: No hay diferencias significativas en Shim_loc entre individuos sanos y pacientes con Parkinson
 
-- **H1**: Existen diferencias significativas en Shim_loc entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad en la voz de los pacientes.
+- *H1*: Existen diferencias significativas en Shim_loc entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad en la voz de los pacientes.
 
 **7. Shimmer APQ3**
 
 **Shim_APQ3** calcula el cociente de perturbación de amplitud promedio sobre tres ciclos consecutivos, proporcionando una medida más estable que Shim_loc y menos sensible a fluctuaciones aisladas.
 
-- **H0**: No hay diferencias significativas en Shim_APQ3 entre individuos sanos y pacientes con Parkinson.
+- *H0*: No hay diferencias significativas en Shim_APQ3 entre individuos sanos y pacientes con Parkinson.
 
-- **H1**: Existen diferencias en Shim_APQ3 entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en los pacientes.
+- *H1*: Existen diferencias en Shim_APQ3 entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en los pacientes.
 
 **8. Shimmer APQ5**
 
 **Shim_APQ5** es el cociente de perturbación de amplitud promedio sobre cinco ciclos consecutivos, proporcionando una medida de la variabilidad de la amplitud más estable y menos sensible a fluctuaciones extremas.
 
-- **H0**: La perturbación de la amplitud medida por Shim_APQ5 es similar entre individuos sanos y pacientes con Parkinson, indicando que la regularidad de la voz no se ve afectada por la enfermedad.
+- *H0*: La perturbación de la amplitud medida por Shim_APQ5 es similar entre individuos sanos y pacientes con Parkinson, indicando que la regularidad de la voz no se ve afectada por la enfermedad.
 
-- **H1**: La perturbación de la amplitud medida por Shim_APQ5 difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos.
+- *H1*: La perturbación de la amplitud medida por Shim_APQ5 difiere entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en estos últimos.
 
 **9. Shimmer APQ11**
 
 **Shim_APQ11** calcula la perturbación promedio sobre once ciclos consecutivos, proporcionando la medida más estable y global de la irregularidad de la amplitud vocal.
 
-- **H0**: No hay diferencias significativas en Shim_APQ11 entre individuos sanos y pacientes con Parkinson.
+- *H0*: No hay diferencias significativas en Shim_APQ11 entre individuos sanos y pacientes con Parkinson.
 
-- **H1**: Existen diferencias significativas en Shim_APQ11 entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en los pacientes.
+- *H1*: Existen diferencias significativas en Shim_APQ11 entre individuos sanos y pacientes con Parkinson, reflejando mayor irregularidad vocal en los pacientes.
 
 **10. Análisis Univariante de las variables no lineales**
 
@@ -692,7 +692,7 @@ shapiro.test(DP_var_IQR$RPDE_IQR[DP_var_IQR$Status == "PD"])
 #Esto nos da a entender que la variabilidad de RPDE es más heterogénea en PD, dando a entender que puede tratarse de una mayor diversidad de patrones dinámicos.
 
 wilcox.test(RPDE_IQR ~ Status, data = DP_var_IQR)
-#Los resultados no mostraron diferencias estadísticamente significativas en los valores de DFA entre sujetos con Parkinson y controles sanos (p = 0.512).
+#Los resultados no mostraron diferencias estadísticamente significativas en los valores de RPDE entre sujetos con Parkinson y controles sanos (p = 0.5119).
 
 cliff.delta(RPDE_IQR ~ Status, data = DP_var_IQR)
 #El tamaño del efecto estimado es despreciable (δ = -0.08625), lo que refuerza la ausencia de diferencias sistemáticas en la dispersión intra-sujeto entre grupos.
@@ -875,6 +875,9 @@ ggplot(DP_Univ, aes(x = factor(Status), y = RPDE_Media, colour = Status)) +
     title = "Comparación valores promedio RPDE entre sujetos control y Parkinson"
   ) 
 
+#Podemos observar que las medianas de ambos grupos son similares, por lo que podríamos decir que la regularidad media del periodo de vibración no difiere de forma clara entre grupos
+#Podemos observar un solapamiento claro entre el grupo sano y el grupo Parkinson, reforzando la idea de que RPDE no nos ayuda a diagnosticar por si sólo, pero puede llegar aportar información discriminativa.
+#En el grupo Parkinson existe un outlier con un RPDE promedio bastante superior al resto de observaciones del mismo grupo. Esto sugiere que dicho sujeto podría presentar una dinámica vocal más inestable que otros pacientes. Su presencia refuerza 
 ```
 
 ```{r Fig_Univ_PPE, fig.align='center', fig.cap= "Figura. Boxplot PPE ~ Status"}
@@ -887,6 +890,8 @@ ggplot(DP_Univ, aes(x = factor(Status), y = PPE_Media, colour = Status)) +
     title = "Comparación valores promedio PPE entre sujetos control y Parkinson"
   )
 
+#Podemos observar que la mediana del grupo Parkinson es algo mayor que la del grupo control. Esto nos indica que los sujetos con Parkinson presentan valores centrales de PPE más altos que los sujetos sanos, lo que nos da a entender que existe algo más de irregularidad en el periodo del pitch de las personas con Parkinson.
+#Podemos observar un solapamiento claro entre el grupo sano y el grupo Parkinson, reforzando la idea de que PPE no nos ayuda a diagnosticar por si sólo, pero puede llegar aportar información discriminativa.
 ```
 
 ```{r Fig_Univ_DFA, fig.align = 'center', fig.cap= "Figura. Boxplot DFA ~ Status"}
@@ -897,7 +902,13 @@ ggplot(DP_Univ, aes(x = factor(Status), y = DFA_Media, colour = Status)) +
     y = "Detrended Flunctuation Analysis (DFA)",
     title = "Comparación valores promedio DFA entre sujetos control y Parkinson"
   )
+
+#Podemos volver a observar que la mediana del grupo Parkinson es algo mayor que la del grupo control, dando a entender que los sujetos con PArkinson presentan valores ligramente más altos de DFA que los controles, indicando mayores correlaciones temporales persistentes en la señal vocal.
+#Existe un solapamiento considerable entre ambos grupos, lo que vuelve a reforzar la idea de que estas variables no discriminan por sí solas pero aportan información que puede ser complimentaria a las demás.
+#Aquí también encontramos un outlier pero esta vez presenta un DFA promedio bastante inferior al resto de observaciones del mismo grupo, que sugiere que la organización temporal de la voz del sujeto es más desestructurada. 
 ```
+
+Tras observar los datos visualmente podemos determinar que no existen realmente diferencias significativas entre ambos grupos tomando en cuenta los valores de las variables no lineales, por lo que **NO** rechazaríamos la hipótesis nula **(H0)**. Esto refuerza la idea de que no debemos de tomar estas variables como posibles biomarcadores independientes, sino que cada una nos muestra información complimentaria con la información de las demás.
 
 ### 4.8 Resultados análisis variabilidad intra-sujeto
 
@@ -911,6 +922,8 @@ ggplot(DP_var_IQR, aes(x = Status, y = RPDE_IQR, colour = Status)) +
     title = "Análisis de dispersión intra-sujeto de RPDE"
   )
 
+#Podemos apreciar un ligero aumento de la dispersión global en los valores del grupo con parkinson, sugiriendo una mayor heterogeneidad interindividual en la estabilidad dinámica de la voz.
+#Sin embargo, esto junto con la amplia superposición que muestran ambos grupos, no permite que se generen diferencias verdaderamente significativas a nivel grupal, impidiendo discriminar de manera clara entre grupos cuando analizamos de manera independiente.
 ```
 
 ```{r Fig_IQR_PPE, fig.align = 'center', fig.cap= "Figura. Boxplot-jitter PPE ~ Status"}
@@ -922,6 +935,9 @@ ggplot(DP_var_IQR, aes(x = Status, y = PPE_IQR, colour = Status)) +
     y = "Dispersión intra-sujeto de PPE (IQR)",
     title = "Análisis de dispersión intra-sujeto de PPE"
   )
+
+#Observamos de nuevo un fuerte solapamiento entre ambos grupos, con algunos outliers en ambos grupos y sin un patrón de dispersión consistente a nivel grupal. Esto vuelve a reforzar la idea de no tomar en cuenta los resultados de manera independiente si no como información complimentaria a otros valores sacados del análisis de más métricas.
+
 ```
 
 ```{r Fig_IQR_DFA, fig.align = 'center', fig.cap= "Figura. Boxplot-jitter DFA ~ Status"}
@@ -934,7 +950,10 @@ ggplot(DP_var_IQR, aes(x = Status, y = DFA_IQR, colour = Status)) +
     y = "Dispersión intra-sujeto de DFA (IQR)",
     title = "Análisis de dispersión intra-sujeto de DFA"
   )
+
+#En este caso, existe una mayor amplitud de los valores en ambos grupos, pero de nuevo nos encontramos con una amplia superposición de las distribuciones, indicando que la variabilidad global intra-sujeto no difiere de manera sistemática entre los grupos
 ```
+Tras observar los datos visualmente podemos determinar que no existen realmente diferencias significativas entre los sujetos de ambos grupos, por lo que **NO** rechazaríamos la hipótesis nula **(H0)**. Esto refuerza la idea de que es necesario realizar enfoques que preserven la dinámica temporal o que llegen a integrar múltiples métricas no lineales.
 
 ## Conclusiones
 
