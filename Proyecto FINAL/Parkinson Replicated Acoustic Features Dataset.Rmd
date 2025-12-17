@@ -2,13 +2,11 @@
 title: "Análisis del Dataset *Parkinson Replicated Acoustic Features*"
 author: "Elena Barro León, Raúl Bonillo Pulido y Paula Merino Purificacion"
 date: "`r Sys.Date()`"
-output: 
- github_document:
-  html_preview: false
- html_document:
+output:
+  html_document:
     toc: true
     toc_float: true #Hace que el índice sea flotante
-    theme: journal
+  theme: journal
 bibliography: [Naranjo2017.bib, Naranjo2016.bib, libraries.bib]
 link_citations: true
 ---
@@ -58,24 +56,24 @@ library(effsize) # Para poder calcular el Cliff's Delta que nos servirá para ve
 <!-- Leemos los datos que vamos a utilizar. Como queremos que el código se ejecute, pero no que aparezca en el documento final, excluímos los avisos y mensajes echo=FALSE (Elimina el código, solo sale el resultado), warning=FALSE (No aparece el error ni el mensaje de error), message=FALSE (Se ejecuta el código pero no aparece el mensaje) --> 
 
 ```{r leer datos, echo=FALSE, message=FALSE, warning=FALSE}
-datos_Parkinson <- read_delim("C:/Users/t1bal/ELENA/UNIVERSIDAD/4 curso/Computación/Proyevto R/Computación/Proyecto FINAL/archive/ReplicatedAcousticFeatures-ParkinsonDatabase2019.csv", delim = ";", escape_double = FALSE, col_types = cols(HNR05 = col_number(), 
-                                                                              HNR15 = col_number(), HNR25 = col_number(), 
-                                                                              HNR35 = col_number(), HNR38 = col_number(), 
-                                                                              MFCC0 = col_number(), MFCC1 = col_number(), 
-                                                                              MFCC2 = col_number(), MFCC3 = col_number(), 
-                                                                              MFCC4 = col_number(), MFCC5 = col_number(), 
-                                                                              MFCC6 = col_number(), MFCC7 = col_number(), 
-                                                                              MFCC8 = col_number(), MFCC9 = col_number(), 
-                                                                              MFCC10 = col_number(), MFCC11 = col_number(), 
-                                                                              MFCC12 = col_number(), Delta0 = col_number(), 
-                                                                              Delta1 = col_number(), Delta2 = col_number(), 
-                                                                              Delta3 = col_number(), Delta4 = col_number(), 
-                                                                              Delta5 = col_number(), Delta6 = col_number(), 
-                                                                              Delta7 = col_number(), Delta8 = col_number(), 
-                                                                              Delta9 = col_number(), Delta10 = col_number(), 
+datos_Parkinson <- read_delim("C:/Users/raulb/OneDrive/Escritorio/Proyecto FINAL/archive/ReplicatedAcousticFeatures-ParkinsonDatabase2019.csv", delim = ";", escape_double = FALSE, col_types = cols(HNR05 = col_number(),
+                                                                              HNR15 = col_number(), HNR25 = col_number(),
+                                                                              HNR35 = col_number(), HNR38 = col_number(),
+                                                                              MFCC0 = col_number(), MFCC1 = col_number(),
+                                                                              MFCC2 = col_number(), MFCC3 = col_number(),
+                                                                              MFCC4 = col_number(), MFCC5 = col_number(),
+                                                                              MFCC6 = col_number(), MFCC7 = col_number(),
+                                                                              MFCC8 = col_number(), MFCC9 = col_number(),
+                                                                              MFCC10 = col_number(), MFCC11 = col_number(),
+                                                                              MFCC12 = col_number(), Delta0 = col_number(),
+                                                                              Delta1 = col_number(), Delta2 = col_number(),
+                                                                              Delta3 = col_number(), Delta4 = col_number(),
+                                                                              Delta5 = col_number(), Delta6 = col_number(),
+                                                                              Delta7 = col_number(), Delta8 = col_number(),
+                                                                              Delta9 = col_number(), Delta10 = col_number(),
                                                                               Delta11 = col_number(), Delta12 = col_number(),
-                                                                              Jitter_rel = col_number()), 
-                         locale = locale(grouping_mark = ""), 
+                                                                              Jitter_rel = col_number()),
+                         locale = locale(grouping_mark = ""),
                          trim_ws = TRUE)
 
 ```
@@ -94,7 +92,7 @@ datos_Parkinson %>%
 ```{r  Primera vista datos, echo=FALSE, message=FALSE, warning=FALSE}
 datatable( #Genera una tabla interactiva en HTLM
   head(datos_Parkinson, 8), #Seleccionamos las 8 primero filas del dataset
-  caption = 'Tabla 1: Ocho primeras filas (todas las columnas)', #Agregamos un título 
+  caption = 'Tabla 1: Ocho primeras filas (todas las columnas)', #Agregamos un título
   options = list( #Ajustes para la visualización de la tabla
     scrollX = TRUE, #Permite que nos podamos desplazar de forma horizontal en la tabla
     pageLength = 8)) #Indicamos el número de filas que pueden ser visibles por página
@@ -111,7 +109,7 @@ El conjunto de datos contiene `r nrow(datos_Parkinson)` filas y `r ncol(datos_Pa
 
 El **jitter relativo** es el indicador primario de la inestabilidad del tono de la voz. Mide el desorden o la irregularidad ciclo a ciclo en la duración de las vibraciones de las cuerdas vocales. Un Jitter Relativo alto se interpreta como una alteración en el mecanismo de la fonación.
 
-- *H0*: No existen diferencias significativas en la distribución jitter_rel entre el grupo control (sanos) y grupo Parkinson. 
+- *H0*: No existen diferencias significativas en la distribución jitter_rel entre el grupo control (sanos) y grupo Parkinson.
 - *H1*: Existen diferencias en la distribución del jitter_rel entre el grupo control (sanos) y grupo Parkinson.
 
 **2. Jitter_abs**
@@ -195,11 +193,11 @@ Dado que las variables no lineales describen propiedades dinámicas de la señal
 
 ## Materiales
 
-El presente estudio en el conjunto de datos recopilados por [kaggle](https://www.kaggle.com/datasets/hugosouza/parkinson-replicated-acoustic-features-dataset/data). 
+El presente estudio en el conjunto de datos recopilados por [kaggle](https://www.kaggle.com/datasets/hugosouza/parkinson-replicated-acoustic-features-dataset/data).
 
 Durante la revisión del conjunto de datos se detectaron inconsistencias en el formato numérico de algunas variables, ya que el carácter punto (.) se utilizaba tanto como separador decimal como separador de miles. En varios casos se observaron valores con múltiples puntos y sin un criterio uniforme claramente documentado en el artículo original. Ante esta situación, se adoptó un criterio homogéneo para el preprocesamiento de los datos, tomando como referencia el primer punto en aquellos valores donde actuaba como separador de miles, con el objetivo de garantizar una representación numérica coherente para el análisis estadístico posterior.
 
-Hemos usado R [@readr] para leer los datos. Hemos usado dplyr [@R-dplyr], ggplot2 [@R-ggplot2], R studio [@R-base] para trabajar con los datos, effsize [@effsize], DT [@DT] para crear tablas interactivas y kableExtra [@kableExtra] para personalizar las tablas. 
+Hemos usado R [@readr] para leer los datos. Hemos usado dplyr [@R-dplyr], ggplot2 [@R-ggplot2], R studio [@R-base] para trabajar con los datos, effsize [@effsize], DT [@DT] para crear tablas interactivas y kableExtra [@kableExtra] para personalizar las tablas.
 
 
 ## Métodos
@@ -912,6 +910,7 @@ ggplot(DP_var_IQR, aes(x = Status, y = RPDE_IQR, colour = Status)) +
     y = "Dispersión intra-sujeto de RPDE (IQR)",
     title = "Análisis de dispersión intra-sujeto de RPDE"
   )
+
 ```
 
 ```{r Fig_IQR_PPE, fig.align = 'center', fig.cap= "Figura. Boxplot-jitter PPE ~ Status"}
@@ -951,6 +950,4 @@ En general, esto indica que la selección de métricas sensibles y la considerac
 session <- sessionInfo()
 print(session)
 ```
-
-
 
